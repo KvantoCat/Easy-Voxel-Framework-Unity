@@ -19,6 +19,6 @@ A framework for rendering large voxel scenes for Unity on the GPU
 
 ### Control
 
-[Q] - lock/unlock rotation
-[W,A,S,D] - move the Camera
+[Q]	- lock/unlock rotation  
+[W,A,S,D] - move the Camera  
 [R] - render scene
