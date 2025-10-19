@@ -5,10 +5,18 @@ A framework for rendering large voxel scenes for Unity on the GPU
 
 ## Installation
 
-1) Clone repository into your Unity project's Assets folder
+1. Go to Unity
+2. Clone repository into Assets folder
 
 ```bash
   git clone https://github.com/KvantoCat/Easy-Voxel-Framework-Unity.git
 ```
 
-2) Create Camera object and attach two scripts located in the Examples folder to it
+## Usage
+
+1. Create Camera object
+2. Attach two scripts located in the Examples folder to the Camera
+
+[Q] - lock/unlock rotation
+[W,A,S,D] - move the Camera
+[R] - render scene
