@@ -1,0 +1,13 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UIToolkit/UIProfiler/UIProfilerSlyle.uss?fileID=7433441132597879392&amp;guid=4581efff14b970f4a95b94cc93a6d7cd&amp;type=3#UIProfilerSlyle" />
+    <engine:VisualElement name="ProfilerWindow" class="window">
+        <engine:VisualElement name="Header" class="header">
+            <engine:Label text="Profiler window" name="Title" class="title" />
+        </engine:VisualElement>
+        <engine:VisualElement name="Body" class="body">
+            <engine:Label name="Version" class="label" />
+            <engine:Label name="Performance" class="label" />
+            <engine:Label name="Memory" class="label" />
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

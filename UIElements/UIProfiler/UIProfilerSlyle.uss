@@ -1,0 +1,63 @@
+.window {
+    align-self: flex-start;
+    align-items: stretch;
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    margin-left: 0;
+    margin-top: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    justify-content: flex-start;
+    align-content: flex-start;
+    margin-right: 0;
+    margin-bottom: 0;
+    position: absolute;
+}
+
+.header {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(255, 255, 255);
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.body {
+    margin-left: 12px;
+    margin-right: 12px;
+    align-self: flex-start;
+}
+
+.label {
+    -unity-font-definition: url("project://database/Assets/Fonts/GoogleSansCode-VariableFont_wght.ttf?fileID=12800000&guid=0a0baae131080e2458cae5806cfd6831&type=3#GoogleSansCode-VariableFont_wght");
+    font-size: 30px;
+    -unity-text-align: middle-left;
+    color: rgb(255, 255, 255);
+}
+
+.title {
+    -unity-font-definition: url("project://database/Assets/Fonts/GoogleSansCode-VariableFont_wght.ttf?fileID=12800000&guid=0a0baae131080e2458cae5806cfd6831&type=3#GoogleSansCode-VariableFont_wght");
+    font-size: 30px;
+    -unity-text-align: middle-left;
+    color: rgb(255, 255, 255);
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+}
