@@ -1,7 +1,8 @@
 
 # Easy-Voxel-Framework-Unity
 
-A framework for rendering large voxel scenes for Unity on the GPU
+A Unity framework for rendering large voxel scenes on GPU  
+(This is a very early version. More detailed documentation will be available later)
 
 ## Installation
 
