@@ -13,12 +13,22 @@ public class FreeCameraControl : MonoBehaviour
 
     private void Start()
     {
+        if (_camera == null) 
+        { 
+            return; 
+        }
+
         _yaw = _camera.transform.eulerAngles.y;
         _pitch = _camera.transform.eulerAngles.x;
     }
 
     private void Update()
     {
+        if (_camera == null)
+        {
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.Q))
         {
             if (Cursor.lockState != CursorLockMode.Locked)

@@ -4,81 +4,112 @@ using UnityEngine;
 
 namespace EasyVoxel
 {
-    public class VoxelObject
+    [DisallowMultipleComponent]
+    public class VoxelObject : MonoBehaviour
     {
-        private VTransform _transform;
-        private VoxelOctree _voxelOctree;
+        [SerializeField, Range(1, 8)] private int _depth = 5;
 
-        public VTransform Transform
-        {
-            get { return _transform; }
-            set { _transform = value; }
-        }
+        private VoxelOctree _voxelOctree;
 
         public VoxelOctree VoxelOctree
         {
             get { return _voxelOctree; }
-            set { _voxelOctree = value; }
+            set 
+            { 
+                _voxelOctree = value;
+                _depth = CalculateDepth();
+            }
+        }
+
+        public int Depth
+        {
+            get { return _depth; }
         }
 
         public int MinVoxelSize
         {
-            get { return 1 << (_voxelOctree.Depth); }
+            get { return 1 << (_depth); }
         }
 
         public float MinVoxelScale
         {
-            get { return _transform.Scale / MinVoxelSize; }
+            get { return transform.localScale.x / MinVoxelSize; }
         }
 
-        public VoxelObject()
+        public void Build(Vector3 point, Func<Vector3, Color> colorFunc)
         {
-            _transform = new VTransform();
-            _voxelOctree = null;
+            _voxelOctree ??= new VoxelOctree();
+            _voxelOctree.Build(_depth, (UnitCube unitCube) => unitCube.IsContain(point), colorFunc);
         }
 
-        public VoxelObject(VTransform transform, VoxelOctree voxelOctree)
+        public void Build(PolygonalTree polygonTree, Func<Vector3, Color> colorFunc)
         {
-            _transform = transform;
-            _voxelOctree = voxelOctree;
+            _voxelOctree ??= new VoxelOctree();
+            _voxelOctree.Build(_depth, (UnitCube unitCube) => polygonTree.IsIntersectUnitCube(unitCube), colorFunc);
         }
 
         public void SetVoxel(Vector3 pointPos, Vector3 normal, Color color)
         {
-            pointPos += normal / (1 << _voxelOctree.Depth) / 2.0f * _transform.Scale;
-            Vector3 pointPosNew = (pointPos - _transform.Position) / _transform.Scale;
+            pointPos += normal / (1 << _depth) / 2.0f * transform.localScale.x;
+            Vector3 pointPosNew = (pointPos - transform.position) / transform.localScale.x;
 
             VoxelOctree voxelOctree = new();
-            voxelOctree.Build(_voxelOctree.Depth, pointPosNew, (Vector3 voxPos) => SetVoxelColorFunction(voxPos, pointPos, color));
+            Build(pointPosNew, (Vector3 voxPos) => SetVoxelColorFunction(voxPos, pointPos, color));
 
             _voxelOctree.MergeWith(voxelOctree);
         }
 
         private Color SetVoxelColorFunction(Vector3 voxPos, Vector3 pointPos, Color color)
         {
-            Vector3Int pointCoord = Vector3Int.FloorToInt((pointPos - _transform.Position) / MinVoxelScale);
+            Vector3Int pointCoord = Vector3Int.FloorToInt((pointPos - transform.position) / MinVoxelScale);
             Vector3Int voxCoord = Vector3Int.FloorToInt(voxPos * MinVoxelSize);
 
             return Vec3Help.IsEqual(pointCoord, voxCoord) ? color : Color.black;
         }
 
+        public int CalculateDepth()
+        {
+            if (_voxelOctree.Nodes.Count == 0) 
+            {
+                return -1; 
+            }
+
+            int count = 1;
+            OctreeNode node = _voxelOctree.Nodes[0];
+
+            while (node.Child != -1)
+            {
+                for (int i = 0; i < MathHelp.PopCount(node.Mask); i++)
+                {
+                    if (node.Child != -1)
+                    {
+                        count++;
+                        node = _voxelOctree.Nodes[node.Child + i];
+                        break;
+                    }
+                }
+            }
+
+            return count;
+        }
+
         [Obsolete("Old method", false)]
         public bool RayTrace(Vector3 ro, Vector3 rd, out float distance, out Vector3 normal)
         {
-            float epsilon = 0.000707f * _transform.Scale / _voxelOctree.Depth;
+            float epsilon = 0.000707f * transform.localScale.x / _depth;
 
-            Vector3 pos = _transform.Position - 0.5f * _transform.Scale * Vector3.one;
+            Vector3 pos = transform.position - 0.5f * transform.localScale.x * Vector3.one;
             rd += new Vector3(rd.x == 0.0f ? 1.0f : 0.0f, rd.y == 0.0f ? 1.0f : 0.0f, rd.z == 0.0f ? 1.0f : 0.0f) * 1e-6f;
 
             distance = 0.0f;
             normal = Vector3.zero;
             bool isHit = false;
 
-            if (!(ro.x >= pos.x && ro.x < pos.x + _transform.Scale &&
-                 ro.y >= pos.y && ro.y < pos.y + _transform.Scale &&
-                 ro.z >= pos.z && ro.z < pos.z + _transform.Scale))
+            if (!(ro.x >= pos.x && ro.x < pos.x + transform.localScale.x &&
+                 ro.y >= pos.y && ro.y < pos.y + transform.localScale.x &&
+                 ro.z >= pos.z && ro.z < pos.z + transform.localScale.x))
             {
-                if (!RayTracingHelpOLD.GetBoxIntersection(ro, rd, pos, _transform.Scale, out distance, out normal))
+                if (!RayTracingHelpOLD.GetBoxIntersection(ro, rd, pos, transform.localScale.x, out distance, out normal))
                 {
                     distance = 1000.0f;
                     return isHit;
@@ -105,7 +136,7 @@ namespace EasyVoxel
                     break;
                 }
 
-                Vector3 nodePo = (po - pos) * (1 << depth) / _transform.Scale;
+                Vector3 nodePo = (po - pos) * (1 << depth) / transform.localScale.x;
                 int nodeICoord = RayTracingHelpOLD.GetICoord(nodePo);
 
                 int nodeICoordFromStack = (stack >> (depth * 3)) & 7;
@@ -113,7 +144,7 @@ namespace EasyVoxel
 
                 if (nodeICoord == nodeICoordFromStack)
                 {
-                    float childScale = _transform.Scale / (1u << childDepth);
+                    float childScale = transform.localScale.x / (1u << childDepth);
                     Vector3 childPo = (po - pos) / childScale;
                     int childICoord = RayTracingHelpOLD.GetICoord(childPo);
 

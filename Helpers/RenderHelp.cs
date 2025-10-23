@@ -13,7 +13,6 @@ namespace EasyVoxel
             if (buffer == null || !buffer.IsValid() || buffer.count < count || buffer.stride != stride)
             {
                 ReleaseComputeBuffer(ref buffer);
-
                 buffer = new ComputeBuffer(Mathf.FloorToInt(count * (1.0f + additionaMemoryBufferPercent)), stride, ComputeBufferType.Structured);
             }
 

@@ -8,21 +8,11 @@ namespace EasyVoxel
     public class VoxelOctree
     {
         private List<OctreeNode> _nodes;
-        private int _depth;
 
         public List<OctreeNode> Nodes
         {
             get { return _nodes; }
-            set
-            {
-                _nodes = value;
-                _depth = CalculateDepth();
-            }
-        }
-
-        public int Depth
-        {
-            get { return _depth; }
+            set { _nodes = value; }
         }
 
         public VoxelOctree()
@@ -30,26 +20,14 @@ namespace EasyVoxel
             _nodes = new();
         }
 
-        public VoxelOctree(List<OctreeNode> nodes, int depth, bool isCopy)
+        public VoxelOctree(List<OctreeNode> nodes, bool isCopy)
         {
             _nodes = isCopy ? new(nodes) : nodes;
-            _depth = depth;
-        }
-
-        public void Build(int depth, Vector3 point, Func<Vector3, Color> colorFunc)
-        {
-            Build(depth, (UnitCube unitCube) => unitCube.IsContain(point), colorFunc);
-        }
-
-        public void Build(int depth, PolygonalTree polygonTree, Func<Vector3, Color> colorFunc)
-        {
-            Build(depth, (UnitCube unitCube) => polygonTree.IsIntersectUnitCube(unitCube), colorFunc);
         }
 
         public void Build(int depth, Func<UnitCube, bool> intersectUnitCubeFunc, Func<Vector3, Color> colorFunc)
         {
             Clear();
-            _depth = depth;
 
             UnitCube cube = new(-0.5f * Vector3.one, 1.0f);
 
@@ -132,7 +110,7 @@ namespace EasyVoxel
 
         public void MergeWith(VoxelOctree tree)
         {
-            VoxelOctree copyTree = new(_nodes, tree.Depth, true);
+            VoxelOctree copyTree = new(_nodes, true);
             _nodes.Clear();
 
             VoxelOctree resultTree = Merge(copyTree, tree);
@@ -142,10 +120,10 @@ namespace EasyVoxel
 
         public static VoxelOctree Merge(VoxelOctree tree0, VoxelOctree tree1)
         {
-            if (tree0.Depth != tree1.Depth)
-            {
-                throw new Exception($"Different depths {tree0.Depth} and {tree1.Depth}");
-            }
+            //if (tree0.Depth != tree1.Depth)
+            //{
+            //    throw new Exception($"Different depths {tree0.Depth} and {tree1.Depth}");
+            //}
 
             List<OctreeNode> nodes = new();
 
@@ -229,7 +207,7 @@ namespace EasyVoxel
                 nodes.Add(new(mask, child, parentInd, col0, col1, col2, col3));
             }
 
-            return new(nodes, tree0.Depth, false);
+            return new(nodes, false);
         }
 
         public void Clear()
@@ -237,32 +215,32 @@ namespace EasyVoxel
             _nodes.Clear();
         }
 
-        public int CalculateDepth()
-        {
-            if (_nodes.Count == 0) { return -1; }
+        //public int CalculateDepth()
+        //{
+        //    if (_nodes.Count == 0) { return -1; }
 
-            int count = 1;
-            OctreeNode node = _nodes[0];
+        //    int count = 1;
+        //    OctreeNode node = _nodes[0];
 
-            while (node.Child != -1)
-            {
-                for (int i = 0; i < MathHelp.PopCount(node.Mask); i++)
-                {
-                    if (node.Child != -1)
-                    {
-                        count++;
-                        node = _nodes[node.Child + i];
-                        break;
-                    }
-                }
-            }
+        //    while (node.Child != -1)
+        //    {
+        //        for (int i = 0; i < MathHelp.PopCount(node.Mask); i++)
+        //        {
+        //            if (node.Child != -1)
+        //            {
+        //                count++;
+        //                node = _nodes[node.Child + i];
+        //                break;
+        //            }
+        //        }
+        //    }
 
-            return count;
-        }
+        //    return count;
+        //}
 
         public void Print(bool printAll)
         {
-            Debug.Log($"Max tree depth: {Depth}");
+           // Debug.Log($"Max tree depth: {Depth}");
             Debug.Log($"Nodes count: {_nodes.Count}");
 
             if (_nodes.Count < 250 && printAll)

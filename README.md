@@ -15,8 +15,7 @@ A Unity framework for rendering large voxel scenes on GPU
 
 ## Usage
 
-1. Create Camera object
-2. Attach two scripts located in the Examples folder to the Camera
+Early version. I don't recommend using it now
 
 ### Control
 
