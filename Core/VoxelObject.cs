@@ -7,9 +7,10 @@ namespace EasyVoxel
     [DisallowMultipleComponent]
     public class VoxelObject : MonoBehaviour
     {
-        [SerializeField, Range(1, 8)] private int _depth = 5;
+        [SerializeField, Range(1, 9)] private int _depth = 5;
 
         private VoxelOctree _voxelOctree;
+        private Bounds _bounds;
 
         public VoxelOctree VoxelOctree
         {
@@ -17,6 +18,7 @@ namespace EasyVoxel
             set 
             { 
                 _voxelOctree = value;
+                _bounds = new(Vector3.zero, Vector3.one);
                 _depth = CalculateDepth();
             }
         }
@@ -24,6 +26,11 @@ namespace EasyVoxel
         public int Depth
         {
             get { return _depth; }
+        }
+
+        public Bounds Bounds
+        {
+            get { return _bounds; }
         }
 
         public int MinVoxelSize
@@ -39,12 +46,14 @@ namespace EasyVoxel
         public void Build(Vector3 point, Func<Vector3, Color> colorFunc)
         {
             _voxelOctree ??= new VoxelOctree();
+            _bounds = new(Vector3.zero, Vector3.one);
             _voxelOctree.Build(_depth, (UnitCube unitCube) => unitCube.IsContain(point), colorFunc);
         }
 
         public void Build(PolygonalTree polygonTree, Func<Vector3, Color> colorFunc)
         {
             _voxelOctree ??= new VoxelOctree();
+            _bounds = polygonTree.Bounds;
             _voxelOctree.Build(_depth, (UnitCube unitCube) => polygonTree.IsIntersectUnitCube(unitCube), colorFunc);
         }
 

@@ -1,7 +1,6 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -120,8 +119,9 @@ namespace EasyVoxel
             {  
                 if (voxelObject.TryGetComponent<MeshFilter>(out var meshFilter))
                 {
-                    PolygonalTree poligonTree = new(); poligonTree.Build(meshFilter.sharedMesh);
-                    voxelObject.Build(poligonTree, (Vector3 vec) => new Color(Random.value, 0.5f, 0.35f));
+                    PolygonalTree poligonTree = new();
+                    poligonTree.Build(meshFilter.sharedMesh);
+                    voxelObject.Build(poligonTree, ColorTestFunc);
                 }
             }
 
@@ -129,6 +129,13 @@ namespace EasyVoxel
             {
                 InitShaderScene();
             }
+        }
+
+        private Color ColorTestFunc(Vector3 vec)
+        {
+            float length = Mathf.Pow(Vector3.Magnitude(vec), 1.2f);
+
+            return new Color(length, length, length);
         }
 
         public void InitShaderScene()
@@ -187,7 +194,14 @@ namespace EasyVoxel
                     j = voxelOctreeLink.Nodes.Count;
                 }
 
-                result[i] = new VTransformStuct(transform.localScale.x, transform.position, j, voxelObject.Depth);
+                Bounds bounds = voxelObject.Bounds;
+                Vector3 boundBoxSize = bounds.size;
+                float maxBoundBoxSize = Mathf.Max(Mathf.Max(boundBoxSize.x, boundBoxSize.y), boundBoxSize.z);
+
+                result[i] = new VTransformStuct(
+                    transform.localScale.x * maxBoundBoxSize,
+                    transform.position + maxBoundBoxSize * transform.localScale.x * bounds.center / 2.0f,
+                    j, voxelObject.Depth);
 
                 i++;
             }

@@ -8,74 +8,30 @@ namespace EasyVoxel
     public class PolygonalTree
     {
         private NodeBvh _rootNodeBvh;
-        private BoundsBox _boundsBox;
+        private Bounds _bounds;
 
         public NodeBvh RootNode 
         { 
             get { return _rootNodeBvh; } 
         }
 
-        public BoundsBox BoundsBox
+        public Bounds Bounds
         {
-            get { return _boundsBox; }
+            get { return _bounds; }
         }
 
         public void Build(Mesh mesh)
         {
             List<Triangle3D> triangles = GetTriangles(mesh);
-            Build(triangles);
-        }
-
-        public void Build(List<Triangle3D> triangles)
-        {
-            Clear();
-            _boundsBox = BoundsBox.GetFromTriangles(triangles);
+            _bounds = mesh.bounds;
             _rootNodeBvh = BuildNode(triangles);
-        }
-
-        public bool IsIntersectUnitCube(UnitCube cube)
-        {
-            if (_rootNodeBvh != null)
-            {
-                Vector3 boundBoxSize = _boundsBox.Size;
-                float maxBoundBoxSize = Mathf.Max(Mathf.Max(boundBoxSize.x, boundBoxSize.y), boundBoxSize.z);
-
-                Vector3 scale = Vec3Help.Div(Vector3.one * maxBoundBoxSize, boundBoxSize);
-
-                BoundsBox box = new(
-                    Vec3Help.Mul(cube.Min, _boundsBox.Size, scale),
-                    Vec3Help.Mul(cube.Max, _boundsBox.Size, scale));
-              
-                return IsIntersectBox(box);
-            }
-
-            return false;
-        }
-
-        public bool IsIntersectBox(BoundsBox box)
-        {
-            if (_rootNodeBvh != null)
-            {
-                return IsNodeIntersectBox(_rootNodeBvh, box);
-            }
-
-            return false;
-        }
-
-        public void Clear()
-        {
-            if (_rootNodeBvh != null)
-            {
-                ClearNode(_rootNodeBvh);
-                _rootNodeBvh = null;
-            }
         }
 
         private NodeBvh BuildNode(List<Triangle3D> triangles)
         {
             NodeBvh node = new()
             {
-                Box = BoundsBox.GetFromTriangles(triangles)
+                Box = Box.GetFromTriangles(triangles)
             };
 
             if (triangles.Count <= 2)
@@ -109,9 +65,26 @@ namespace EasyVoxel
             return node;
         }
 
-        private static bool IsNodeIntersectBox(NodeBvh node, BoundsBox box)
+        public bool IsIntersectUnitCube(UnitCube cube)
         {
-            if (!BoundsBox.IsIntersects(node.Box, box))
+            if (_rootNodeBvh != null)
+            {
+                Vector3 boundBoxSize = _bounds.size;
+                float maxBoundBoxSize = Mathf.Max(Mathf.Max(boundBoxSize.x, boundBoxSize.y), boundBoxSize.z);
+
+                Box box = new(
+                    (cube.Min + _bounds.center / 2.0f) * maxBoundBoxSize,
+                    (cube.Max + _bounds.center / 2.0f) * maxBoundBoxSize);
+
+                return IsNodeIntersectBox(_rootNodeBvh, box);
+            }
+
+            return false;
+        }
+
+        private static bool IsNodeIntersectBox(NodeBvh node, Box box)
+        {
+            if (!Box.IsIntersects(node.Box, box))
             {
                 return false;
             }
@@ -134,20 +107,6 @@ namespace EasyVoxel
 
             bool hitRight = node.Right != null && IsNodeIntersectBox(node.Right, box);
             return hitRight;
-        }
-
-        private static void ClearNode(NodeBvh node)
-        {
-            if (node == null)
-            {
-                return;
-            }
-
-            ClearNode(node.Left);
-            ClearNode(node.Right);
-
-            node.Left = null;
-            node.Right = null;
         }
 
         public static List<Triangle3D> GetTriangles(Mesh mesh)
@@ -174,6 +133,29 @@ namespace EasyVoxel
             }
 
             return trianglesList;
+        }
+
+        public void Clear()
+        {
+            if (_rootNodeBvh != null)
+            {
+                ClearNode(_rootNodeBvh);
+                _rootNodeBvh = null;
+            }
+        }
+
+        private static void ClearNode(NodeBvh node)
+        {
+            if (node == null)
+            {
+                return;
+            }
+
+            ClearNode(node.Left);
+            ClearNode(node.Right);
+
+            node.Left = null;
+            node.Right = null;
         }
     }
 }

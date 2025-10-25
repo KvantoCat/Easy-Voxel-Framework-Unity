@@ -25,6 +25,11 @@ namespace EasyVoxel
             return new Vector3(v1.x * v2.x * v3.x, v1.y * v2.y * v3.y, v1.z * v2.z * v3.z);
         }
 
+        public static Vector3 Pow(Vector3 v, float a)
+        {
+            return new Vector3(Mathf.Pow(v.x, a), Mathf.Pow(v.y, a), Mathf.Pow(v.z, a));
+        }
+
         public static Vector3 Min(Vector3 v1, Vector3 v2)
         {
             return new Vector3(

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace EasyVoxel
 {
-    public readonly struct BoundsBox
+    public readonly struct BB
     {
         private readonly Vector3 _min;
         private readonly Vector3 _max;
@@ -24,7 +24,7 @@ namespace EasyVoxel
             get { return Max - Min; }
         }
 
-        public BoundsBox(Vector3 min, Vector3 max)
+        public BB(Vector3 min, Vector3 max)
         {
             _min = min;
             _max = max;
@@ -37,25 +37,25 @@ namespace EasyVoxel
                     point.z >= _min.z && point.z <= _max.z);
         }
 
-        public static bool IsIntersects(BoundsBox a, BoundsBox b)
+        public static bool IsIntersects(BB a, BB b)
         {
             return (a.Min.x <= b.Max.x && a.Max.x >= b.Min.x) &&
                    (a.Min.y <= b.Max.y && a.Max.y >= b.Min.y) &&
                    (a.Min.z <= b.Max.z && a.Max.z >= b.Min.z);
         }
 
-        public static BoundsBox GetFromTriangle(Triangle3D t)
+        public static BB GetFromTriangle(Triangle3D t)
         {
             var min = Vector3.Min(Vector3.Min(t.A, t.B), t.C);
             var max = Vector3.Max(Vector3.Max(t.A, t.B), t.C);
-            return new BoundsBox(min, max);
+            return new BB(min, max);
         }
 
-        public static BoundsBox GetFromTriangles(List<Triangle3D> triangles)
+        public static BB GetFromTriangles(List<Triangle3D> triangles)
         {
             if (triangles.Count == 0)
             {
-                return new BoundsBox(Vector3.zero, Vector3.zero);
+                return new BB(Vector3.zero, Vector3.zero);
             }
 
             Vector3 min = Vector3.one * float.MaxValue;
@@ -67,7 +67,7 @@ namespace EasyVoxel
                 max = Vector3.Max(max, Vector3.Max(Vector3.Max(t.A, t.B), t.C));
             }
 
-            return new BoundsBox(min, max);
+            return new BB(min, max);
         }
     }
 }
