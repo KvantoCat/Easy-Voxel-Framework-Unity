@@ -7,7 +7,7 @@ namespace EasyVoxel
     {
         public NodeBvh Left;
         public NodeBvh Right;
-        public Box Box;
+        public Box3D Box;
 
         public List<Triangle3D> Triangles;
 

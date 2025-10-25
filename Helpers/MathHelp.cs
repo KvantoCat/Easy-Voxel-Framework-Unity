@@ -29,7 +29,7 @@ namespace EasyVoxel
             return x >> 24;
         }
 
-        public static bool IsTriangleIntersectBox(Box box, Vector3 a, Vector3 b, Vector3 c)
+        public static bool IsTriangleIntersectBox(Box3D box, Vector3 a, Vector3 b, Vector3 c)
         {
             Vector3 boxCenter = (box.Min + box.Max) * 0.5f;
             Vector3 boxHalfSize = (box.Max - box.Min) * 0.5f;

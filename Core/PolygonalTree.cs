@@ -31,7 +31,7 @@ namespace EasyVoxel
         {
             NodeBvh node = new()
             {
-                Box = Box.GetFromTriangles(triangles)
+                Box = Box3D.GetFromTriangles(triangles)
             };
 
             if (triangles.Count <= 2)
@@ -72,7 +72,7 @@ namespace EasyVoxel
                 Vector3 boundBoxSize = _bounds.size;
                 float maxBoundBoxSize = Mathf.Max(Mathf.Max(boundBoxSize.x, boundBoxSize.y), boundBoxSize.z);
 
-                Box box = new(
+                Box3D box = new(
                     (cube.Min + _bounds.center / 2.0f) * maxBoundBoxSize,
                     (cube.Max + _bounds.center / 2.0f) * maxBoundBoxSize);
 
@@ -82,9 +82,9 @@ namespace EasyVoxel
             return false;
         }
 
-        private static bool IsNodeIntersectBox(NodeBvh node, Box box)
+        private static bool IsNodeIntersectBox(NodeBvh node, Box3D box)
         {
-            if (!Box.IsIntersects(node.Box, box))
+            if (!Box3D.IsIntersects(node.Box, box))
             {
                 return false;
             }
