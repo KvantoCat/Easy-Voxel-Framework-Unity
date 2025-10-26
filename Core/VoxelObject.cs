@@ -5,12 +5,12 @@ using UnityEngine;
 namespace EasyVoxel
 {
     [DisallowMultipleComponent]
-    public class VoxelObject : MonoBehaviour
+    public abstract class VoxelObject : MonoBehaviour
     {
         [SerializeField, Range(1, 9)] private int _depth = 5;
 
-        private VoxelOctree _voxelOctree;
-        private Bounds _bounds;
+        private VoxelOctree _voxelOctree = new();
+        private Bounds _bounds = new(Vector3.zero, Vector3.one);
 
         public VoxelOctree VoxelOctree
         {
@@ -31,6 +31,7 @@ namespace EasyVoxel
         public Bounds Bounds
         {
             get { return _bounds; }
+            set { _bounds = value; }
         }
 
         public int MinVoxelSize
@@ -43,19 +44,7 @@ namespace EasyVoxel
             get { return transform.localScale.x / MinVoxelSize; }
         }
 
-        public void Build(Vector3 point, Func<Vector3, Color> colorFunc)
-        {
-            _voxelOctree ??= new VoxelOctree();
-            _bounds = new(Vector3.zero, Vector3.one);
-            _voxelOctree.Build(_depth, (UnitCube unitCube) => unitCube.IsContain(point), colorFunc);
-        }
-
-        public void Build(PolygonalTree polygonTree, Func<Vector3, Color> colorFunc)
-        {
-            _voxelOctree ??= new VoxelOctree();
-            _bounds = polygonTree.Bounds;
-            _voxelOctree.Build(_depth, (UnitCube unitCube) => polygonTree.IsIntersectUnitCube(unitCube), colorFunc);
-        }
+        public abstract void Build();
 
         public void SetVoxel(Vector3 pointPos, Vector3 normal, Color color)
         {
@@ -63,7 +52,10 @@ namespace EasyVoxel
             Vector3 pointPosNew = (pointPos - transform.position) / transform.localScale.x;
 
             VoxelOctree voxelOctree = new();
-            Build(pointPosNew, (Vector3 voxPos) => SetVoxelColorFunction(voxPos, pointPos, color));
+
+            voxelOctree.Build(_depth,
+                (UnitCube unitCube) => unitCube.IsContain(pointPos),
+                (Vector3 voxPos) => SetVoxelColorFunction(voxPos, pointPos, color));
 
             _voxelOctree.MergeWith(voxelOctree);
         }
@@ -75,6 +67,12 @@ namespace EasyVoxel
 
             return Vec3Help.IsEqual(pointCoord, voxCoord) ? color : Color.black;
         }
+
+        //private void BuildOneVoxelTree(Vector3 point, Func<Vector3, Color> colorFunc)
+        //{
+        //    _bounds = new(Vector3.zero, Vector3.one);
+        //    _voxelOctree.Build(_depth, (UnitCube unitCube) => unitCube.IsContain(point), colorFunc);
+        //}
 
         public int CalculateDepth()
         {

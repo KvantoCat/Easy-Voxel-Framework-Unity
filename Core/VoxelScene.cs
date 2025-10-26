@@ -116,26 +116,14 @@ namespace EasyVoxel
             _voxelObjects = new(FindObjectsByType<VoxelObject>(FindObjectsSortMode.None));
 
             foreach (VoxelObject voxelObject in _voxelObjects)
-            {  
-                if (voxelObject.TryGetComponent<MeshFilter>(out var meshFilter))
-                {
-                    PolygonalTree poligonTree = new();
-                    poligonTree.Build(meshFilter.sharedMesh);
-                    voxelObject.Build(poligonTree, ColorTestFunc);
-                }
+            {
+                voxelObject.Build();
             }
 
             if (_voxelObjects.Count > 0)
             {
                 InitShaderScene();
             }
-        }
-
-        private Color ColorTestFunc(Vector3 vec)
-        {
-            float length = Mathf.Pow(Vector3.Magnitude(vec), 1.2f);
-
-            return new Color(length, length, length);
         }
 
         public void InitShaderScene()
