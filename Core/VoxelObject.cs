@@ -18,7 +18,6 @@ namespace EasyVoxel
             set 
             { 
                 _voxelOctree = value;
-                _bounds = new(Vector3.zero, Vector3.one);
                 _depth = CalculateDepth();
             }
         }
@@ -67,12 +66,6 @@ namespace EasyVoxel
 
             return Vec3Help.IsEqual(pointCoord, voxCoord) ? color : Color.black;
         }
-
-        //private void BuildOneVoxelTree(Vector3 point, Func<Vector3, Color> colorFunc)
-        //{
-        //    _bounds = new(Vector3.zero, Vector3.one);
-        //    _voxelOctree.Build(_depth, (UnitCube unitCube) => unitCube.IsContain(point), colorFunc);
-        //}
 
         public int CalculateDepth()
         {

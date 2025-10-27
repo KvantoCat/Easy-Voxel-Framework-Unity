@@ -92,7 +92,7 @@ namespace EasyVoxel
                 _voxelRenderMaretial.SetBuffer("TRs", _ObjectsTransformBuffer);
                 _voxelRenderMaretial.SetInt("COUNT", _voxelObjects.Count);
 
-                yield return new WaitForSeconds(second);
+                yield return null;
             }
         }
 
@@ -122,11 +122,11 @@ namespace EasyVoxel
 
             if (_voxelObjects.Count > 0)
             {
-                InitShaderScene();
+                InitScene();
             }
         }
 
-        public void InitShaderScene()
+        public void InitScene()
         {
             List<VoxelOctree> octreeLinks = GetVoxelOctreeLinks();
             OctreeNode[] objectNodes = MergeObjectsNode(octreeLinks);

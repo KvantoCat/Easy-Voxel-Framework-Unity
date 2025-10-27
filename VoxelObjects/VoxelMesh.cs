@@ -19,12 +19,12 @@ namespace EasyVoxel
 
             _polygonalTree.Build(mesh);
             Bounds = _polygonalTree.Bounds;
-            VoxelOctree.Build(Depth, (UnitCube unitCube) => _polygonalTree.IsIntersectUnitCube(unitCube), GetColor);
+            VoxelOctree.Build(Depth, (UnitCube unitCube) => _polygonalTree.IsIntersectUnitCube(unitCube), GetVoxelColor);
         }
 
-        private Color GetColor(Vector3 vec)
+        private Color GetVoxelColor(Vector3 pos)
         {
-            float length = Mathf.Pow(Vector3.Magnitude(vec), 1.5f);
+            float length = Mathf.Pow(Vector3.Magnitude(pos), 1.5f);
 
             return new Color(length, length, length);
         }
