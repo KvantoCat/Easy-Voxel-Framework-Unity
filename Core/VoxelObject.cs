@@ -45,26 +45,30 @@ namespace EasyVoxel
 
         public abstract void Build();
 
-        public void SetVoxel(Vector3 pointPos, Vector3 normal, Color color)
+        public void SetVoxel(Vector3 pos, Vector3 normal, Color color)
         {
-            pointPos += normal / (1 << _depth) / 2.0f * transform.localScale.x;
-            Vector3 pointPosNew = (pointPos - transform.position) / transform.localScale.x;
+            pos += normal / (1 << _depth) / 2.0f * transform.localScale.x;
+
+            if (pos.x > 0.5f || pos.y > 0.5f || pos.z > 0.5f ||
+                pos.x < -0.5f || pos.y < -0.5f || pos.z < -0.5f)
+            {
+                throw new Exception("Position out of range (-0.5, 0.5)");
+            }
 
             VoxelOctree voxelOctree = new();
 
             voxelOctree.Build(_depth,
-                (UnitCube unitCube) => unitCube.IsContain(pointPos),
-                (Vector3 voxPos) => SetVoxelColorFunction(voxPos, pointPos, color));
+                (UnitCube unitCube) => unitCube.IsContain(pos),
+                (Vector3 voxPos) => SetVoxelColorFunction(voxPos, pos, color));
 
             _voxelOctree.MergeWith(voxelOctree);
         }
 
-        private Color SetVoxelColorFunction(Vector3 voxPos, Vector3 pointPos, Color color)
+        private Color SetVoxelColorFunction(Vector3 voxPos, Vector3 pos, Color color)
         {
-            Vector3Int pointCoord = Vector3Int.FloorToInt((pointPos - transform.position) / MinVoxelScale);
-            Vector3Int voxCoord = Vector3Int.FloorToInt(voxPos * MinVoxelSize);
-
-            return Vec3Help.IsEqual(pointCoord, voxCoord) ? color : Color.black;
+            return Vec3Help.IsEqual(
+                Vector3Int.FloorToInt(pos * MinVoxelSize),
+                Vector3Int.FloorToInt(voxPos * MinVoxelSize)) ? color : Color.black;
         }
 
         public int CalculateDepth()

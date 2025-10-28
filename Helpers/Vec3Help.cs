@@ -69,6 +69,14 @@ namespace EasyVoxel
             return new Vector3(Mathf.Ceil(v.x), Mathf.Ceil(v.y), Mathf.Ceil(v.z));
         }
 
+        public static Vector3 Clamp(Vector3 v, float min, float max)
+        {
+            return new(
+                Mathf.Clamp(v.x, min, max),
+                Mathf.Clamp(v.y, min, max),
+                Mathf.Clamp(v.z, min, max));
+        }
+
         public static Vector3 Step(Vector3 v0, Vector3 v1)
         {
             return new Vector3(

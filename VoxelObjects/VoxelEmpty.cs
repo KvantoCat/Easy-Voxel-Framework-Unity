@@ -5,7 +5,7 @@ namespace EasyVoxel
     {
         public override void Build()
         {
-            return;
+            VoxelOctree.Nodes = new() { new OctreeNode(0, -1, -1, 0, 0, 0, 0) };
         }
     }
 }

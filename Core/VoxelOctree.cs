@@ -120,11 +120,6 @@ namespace EasyVoxel
 
         public static VoxelOctree Merge(VoxelOctree tree0, VoxelOctree tree1)
         {
-            //if (tree0.Depth != tree1.Depth)
-            //{
-            //    throw new Exception($"Different depths {tree0.Depth} and {tree1.Depth}");
-            //}
-
             List<OctreeNode> nodes = new();
 
             Queue<(int rNodeInd, int lNodeInd, int parentInd)> queue = new();
@@ -215,32 +210,8 @@ namespace EasyVoxel
             _nodes.Clear();
         }
 
-        //public int CalculateDepth()
-        //{
-        //    if (_nodes.Count == 0) { return -1; }
-
-        //    int count = 1;
-        //    OctreeNode node = _nodes[0];
-
-        //    while (node.Child != -1)
-        //    {
-        //        for (int i = 0; i < MathHelp.PopCount(node.Mask); i++)
-        //        {
-        //            if (node.Child != -1)
-        //            {
-        //                count++;
-        //                node = _nodes[node.Child + i];
-        //                break;
-        //            }
-        //        }
-        //    }
-
-        //    return count;
-        //}
-
         public void Print(bool printAll)
         {
-           // Debug.Log($"Max tree depth: {Depth}");
             Debug.Log($"Nodes count: {_nodes.Count}");
 
             if (_nodes.Count < 250 && printAll)
