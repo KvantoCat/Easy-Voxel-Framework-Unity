@@ -6,11 +6,10 @@ using UnityEngine;
 
 namespace EasyVoxel
 {
-    [DisallowMultipleComponent]
-    [RequireComponent(typeof(Camera))]
-    [ImageEffectAllowedInSceneView]
     [ExecuteAlways]
-
+    [DisallowMultipleComponent]
+    [ImageEffectAllowedInSceneView]
+    [RequireComponent(typeof(Camera))]
     public class VoxelScene : MonoBehaviour
     {
         [Header("Voxel Scene Settings")]
@@ -32,12 +31,9 @@ namespace EasyVoxel
         private ComputeBuffer _ObjectsTransformBuffer;
         private List<VoxelObject> _voxelObjects;
 
-        public List<VoxelObject> Objects
+        public List<VoxelObject> VoxelObjects
         {
-            get 
-            { 
-                return _voxelObjects; 
-            }
+            get { return _voxelObjects; }
         }
 
         private void Awake()
@@ -53,7 +49,7 @@ namespace EasyVoxel
                 };
 
 #if UNITY_EDITOR
-                EditorUtility.DisplayDialog("Object cannot be added", "Unity scene already contains voxel scene", "Ok");
+                EditorUtility.DisplayDialog("Object can't be added", "Unity scene already contains voxel scene", "Ok");
 #endif
 
                 return;
@@ -75,22 +71,16 @@ namespace EasyVoxel
 
         private void Start()
         {
-            StartCoroutine(DelayedUodate(0.01f));
+            StartCoroutine(DelayedUodate());
         }
 
-        private IEnumerator DelayedUodate(float second)
+        private IEnumerator DelayedUodate()
         {
             while (true)
             {
                 _voxelObjects = new(FindObjectsByType<VoxelObject>(FindObjectsSortMode.None));
 
-                List<VoxelOctree> octreeLinks = GetVoxelOctreeLinks();
-                VTransformStuct[] objectsVTransform = MergeObjectsVTransform(octreeLinks);
-
-                RenderHelp.InitComputeBuffer(ref _ObjectsTransformBuffer, objectsVTransform, 0.0f);
-
-                _voxelRenderMaretial.SetBuffer("TRs", _ObjectsTransformBuffer);
-                _voxelRenderMaretial.SetInt("COUNT", _voxelObjects.Count);
+                InitVTransforms();
 
                 yield return null;
             }
@@ -120,119 +110,70 @@ namespace EasyVoxel
                 voxelObject.Build();
             }
 
-            if (_voxelObjects.Count > 0)
-            {
-                InitScene();
-            }
+            InitVTransforms();
+            InitNodes();          
         }
 
-        public void InitScene()
+        private void InitVTransforms()
         {
-            List<VoxelOctree> octreeLinks = GetVoxelOctreeLinks();
-            OctreeNode[] objectNodes = MergeObjectsNode(octreeLinks);
-            VTransformStuct[] objectsVTransform = MergeObjectsVTransform(octreeLinks);
-
-            RenderHelp.InitComputeBuffer(ref _nodesBuffer, objectNodes, 0.03f);
-            RenderHelp.InitComputeBuffer(ref _ObjectsTransformBuffer, objectsVTransform, 0.0f);
-
-            _voxelRenderMaretial.SetBuffer("Nodes", _nodesBuffer);
-            _voxelRenderMaretial.SetBuffer("TRs", _ObjectsTransformBuffer);
-            _voxelRenderMaretial.SetInt("COUNT", _voxelObjects.Count);
-        }
-
-        public OctreeNode[] MergeObjectsNode(List<VoxelOctree> voxelOctreeLinks)
-        {
-            int nodesCount = 0;
-
-            foreach (VoxelOctree octreeLink in voxelOctreeLinks)
+            if (_voxelObjects.Count == 0)
             {
-                nodesCount += octreeLink.Nodes.Count;
+                return;
             }
 
-            OctreeNode[] result = new OctreeNode[nodesCount];
+            VTransformStuct[] vTransforms = new VTransformStuct[_voxelObjects.Count];
 
-            int i = 0;
-
-            foreach (VoxelOctree octreeLink in voxelOctreeLinks)
+            int index = 0;
+            for (int i = 0; i < _voxelObjects.Count; i++)
             {
-                octreeLink.Nodes.CopyTo(result, i);
-                i += octreeLink.Nodes.Count;
-            }
-
-            return result;
-        }
-
-        public VTransformStuct[] MergeObjectsVTransform(List<VoxelOctree> voxelOctreeLinks)
-        {
-            VTransformStuct[] result = new VTransformStuct[_voxelObjects.Count];
-
-            int i = 0;
-            foreach (VoxelObject voxelObject in _voxelObjects)
-            {
+                VoxelObject voxelObject = _voxelObjects[i];
                 Transform transform = voxelObject.transform;
-
-                int j = 0;
-                foreach (VoxelOctree voxelOctreeLink in voxelOctreeLinks)
-                {
-                    if (voxelObject.VoxelOctree == voxelOctreeLink)
-                    {
-                        break;
-                    }
-
-                    j = voxelOctreeLink.Nodes.Count;
-                }
 
                 Bounds bounds = voxelObject.Bounds;
                 Vector3 boundBoxSize = bounds.size;
                 float maxBoundBoxSize = Mathf.Max(Mathf.Max(boundBoxSize.x, boundBoxSize.y), boundBoxSize.z);
 
-                result[i] = new VTransformStuct(
+                vTransforms[i] = new VTransformStuct(
                     transform.localScale.x * maxBoundBoxSize,
                     transform.position + maxBoundBoxSize * transform.localScale.x * bounds.center / 2.0f,
-                    j, voxelObject.Depth);
+                    index, voxelObject.Depth);
 
-                i++;
+                index += voxelObject.VoxelOctree.Nodes.Count;
             }
 
-            return result;
+            RenderHelp.InitComputeBuffer(ref _ObjectsTransformBuffer, vTransforms, 0.0f);
+
+            _voxelRenderMaretial.SetBuffer("TRs", _ObjectsTransformBuffer);
+            _voxelRenderMaretial.SetInt("COUNT", _voxelObjects.Count);
         }
 
-        public List<VoxelOctree> GetVoxelOctreeLinks()
+        private void InitNodes()
         {
-            List<VoxelOctree> voxelOctreeLinks = new();
+            if (_voxelObjects.Count == 0)
+            {
+                return;
+            }
+
+            OctreeNode[] nodes;
+            int nodesCount = 0;
 
             foreach (VoxelObject voxelObject in _voxelObjects)
             {
-                if (voxelObject.VoxelOctree == null)
-                {
-                    continue;
-                }
-
-                if (voxelOctreeLinks.Count == 0)
-                {
-                    voxelOctreeLinks.Add(voxelObject.VoxelOctree);
-
-                    continue;
-                }
-
-                bool a = false;
-
-                foreach (VoxelOctree octreeLink in voxelOctreeLinks)
-                {
-                    if (voxelObject.VoxelOctree == octreeLink)
-                    {
-                        a = true;
-                        break;
-                    }
-                }
-
-                if (!a)
-                {
-                    voxelOctreeLinks.Add(voxelObject.VoxelOctree);
-                }
+                nodesCount += voxelObject.VoxelOctree.Nodes.Count;
             }
 
-            return voxelOctreeLinks;
+            nodes = new OctreeNode[nodesCount];
+
+            int index = 0;
+            foreach (VoxelObject voxelObject in _voxelObjects)
+            {
+                voxelObject.VoxelOctree.Nodes.CopyTo(nodes, index);
+                index += voxelObject.VoxelOctree.Nodes.Count;
+            }
+
+            RenderHelp.InitComputeBuffer(ref _nodesBuffer, nodes, 0.03f);
+
+            _voxelRenderMaretial.SetBuffer("Nodes", _nodesBuffer);
         }
 
         private void SetShaderParams()
