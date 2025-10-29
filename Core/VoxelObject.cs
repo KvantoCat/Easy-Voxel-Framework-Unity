@@ -33,17 +33,40 @@ namespace EasyVoxel
             set { _bounds = value; }
         }
 
-        public int MinVoxelSize
+        public int Size
         {
             get { return 1 << (_depth); }
         }
 
-        public float MinVoxelScale
+        public int HalfSize
         {
-            get { return transform.localScale.x / MinVoxelSize; }
+            get { return Size / 2; }
+        }
+
+        public float VoxelScale
+        {
+            get { return transform.localScale.x / Size; }
         }
 
         public abstract void Build();
+
+        public void SetVoxel(Vector3Int coord, Color color)
+        {
+            int halfSize = HalfSize;
+
+            if (coord.x > halfSize || coord.y > halfSize || coord.z > halfSize ||
+                coord.x <= -halfSize || coord.y <= -halfSize || coord.z <= -halfSize)
+            {
+                throw new Exception($"Position out of range [{-halfSize + 1}, {halfSize}]");
+            }
+
+            VoxelOctree voxelOctree = new();
+            voxelOctree.Build(_depth,
+            (UnitCube unitCube) => unitCube.IsContain((Vector3)coord / Size),
+            (Vector3 voxPos) => SetVoxelColorFunction(coord, Vector3Int.FloorToInt(voxPos * Size) + Vector3Int.one, color));
+
+            _voxelOctree.MergeWith(voxelOctree);
+        }
 
         public void SetVoxel(Vector3 pos, Vector3 normal, Color color)
         {
@@ -56,19 +79,18 @@ namespace EasyVoxel
             }
 
             VoxelOctree voxelOctree = new();
-
             voxelOctree.Build(_depth,
                 (UnitCube unitCube) => unitCube.IsContain(pos),
-                (Vector3 voxPos) => SetVoxelColorFunction(voxPos, pos, color));
+                (Vector3 voxPos) => SetVoxelColorFunction(
+                    Vector3Int.FloorToInt(pos * Size),
+                    Vector3Int.FloorToInt(voxPos * Size), color));
 
             _voxelOctree.MergeWith(voxelOctree);
         }
 
-        private Color SetVoxelColorFunction(Vector3 voxPos, Vector3 pos, Color color)
+        private Color SetVoxelColorFunction(Vector3Int voxCoord, Vector3Int coord, Color color)
         {
-            return Vec3Help.IsEqual(
-                Vector3Int.FloorToInt(pos * MinVoxelSize),
-                Vector3Int.FloorToInt(voxPos * MinVoxelSize)) ? color : Color.black;
+            return Vec3Help.IsEqual(voxCoord, coord) ? color : Color.black;
         }
 
         public int CalculateDepth()

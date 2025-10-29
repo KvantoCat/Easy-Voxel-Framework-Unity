@@ -7,18 +7,21 @@ namespace EasyVoxel
 {
     public class VoxelOctree
     {
-        private List<OctreeNode> _nodes;
+        private List<OctreeNode> _nodes = new() { new OctreeNode(0, -1, -1, 0, 0, 0, 0) };
 
         public List<OctreeNode> Nodes
         {
             get { return _nodes; }
-            set { _nodes = value; }
+            set 
+            { 
+                if (value.Count > 0)
+                {
+                    _nodes = value; 
+                }
+            }
         }
 
-        public VoxelOctree()
-        {
-            _nodes = new();
-        }
+        public VoxelOctree() { }
 
         public VoxelOctree(List<OctreeNode> nodes, bool isCopy)
         {
