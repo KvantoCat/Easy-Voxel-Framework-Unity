@@ -68,26 +68,6 @@ namespace EasyVoxel
             _voxelOctree.MergeWith(voxelOctree);
         }
 
-        public void SetVoxel(Vector3 pos, Vector3 normal, Color color)
-        {
-            pos += normal / (1 << _depth) / 2.0f * transform.localScale.x;
-
-            if (pos.x > 0.5f || pos.y > 0.5f || pos.z > 0.5f ||
-                pos.x < -0.5f || pos.y < -0.5f || pos.z < -0.5f)
-            {
-                throw new Exception("Position out of range (-0.5, 0.5)");
-            }
-
-            VoxelOctree voxelOctree = new();
-            voxelOctree.Build(_depth,
-                (UnitCube unitCube) => unitCube.IsContain(pos),
-                (Vector3 voxPos) => SetVoxelColorFunction(
-                    Vector3Int.FloorToInt(pos * Size),
-                    Vector3Int.FloorToInt(voxPos * Size), color));
-
-            _voxelOctree.MergeWith(voxelOctree);
-        }
-
         private Color SetVoxelColorFunction(Vector3Int voxCoord, Vector3Int coord, Color color)
         {
             return Vec3Help.IsEqual(voxCoord, coord) ? color : Color.black;
