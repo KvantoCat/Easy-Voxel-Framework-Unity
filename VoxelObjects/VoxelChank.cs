@@ -14,12 +14,14 @@ namespace EasyVoxel
             {
                 for (int j = 0; j < Size; j++)
                 {
-                    float height = Mathf.PerlinNoise((float)i / Size, (float)j / Size) * Size;
+                    float height = Mathf.PerlinNoise(
+                        (float)i / Size + transform.position.x / transform.localScale.x, 
+                        (float)j / Size + transform.position.z / transform.localScale.z)
+                        * Size;
+                    int y = Mathf.FloorToInt(height);
 
-                    for (int k = 0; k < height; k++)
-                    {
-                        BitMask3DHelp.SetBit(mask, Depth, i, k, j, true);
-                    }
+                    BitMask3DHelp.SetBit(mask, Depth, i, y, j, true);                         
+                    BitMask3DHelp.SetBit(mask, Depth, i, y + 1, j, true);                         
                 }
             }
 
@@ -30,9 +32,7 @@ namespace EasyVoxel
 
         private Color GetVoxelColor(Vector3 pos)
         {
-            float length = Mathf.Pow(Vector3.Magnitude(pos), 1.5f);
-
-            return new Color(length, length, length);
+            return new Color(Random.value, 0.5f, 0.3f);
         }
     }
 }

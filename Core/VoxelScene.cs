@@ -36,19 +36,25 @@ namespace EasyVoxel
             get { return _voxelObjects; }
         }
 
+        public static VoxelScene Main
+        {
+            get { return FindFirstObjectByType<VoxelScene>(); }
+        }
+
         private void Awake()
         {
             _camera = GetComponent<Camera>();
 
             if (FindObjectsByType<VoxelScene>(FindObjectsSortMode.None).Length > 1)
             {
+
+#if UNITY_EDITOR
                 EditorApplication.delayCall += () =>
                 {
                     DestroyImmediate(this);
                     DestroyImmediate(_camera);
                 };
 
-#if UNITY_EDITOR
                 EditorUtility.DisplayDialog("Object can't be added", "Unity scene already contains voxel scene", "Ok");
 #endif
 

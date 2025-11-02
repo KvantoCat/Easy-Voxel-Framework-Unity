@@ -19,10 +19,6 @@ public class UIProfilerManager : MonoBehaviour
     private Label _memoryLabel;
 
     private bool _isShow = true;
-    private bool _isDragging = false;
-    private Vector3 _clickPos;
-    private float _oldPosX;
-    private float _oldPosY;
 
     private void Awake()
     {
@@ -36,43 +32,6 @@ public class UIProfilerManager : MonoBehaviour
 
     private void Start()
     {
-        _profilerWindow.RegisterCallback<PointerDownEvent>(evt =>
-        {
-            _isDragging = true;
-            _clickPos = evt.position;
-            _oldPosX = _profilerWindow.resolvedStyle.left;
-            _oldPosY = _profilerWindow.resolvedStyle.top;
-
-            _profilerWindow.CapturePointer(evt.pointerId);
-        });
-
-        _profilerWindow.RegisterCallback<PointerMoveEvent>(evt =>
-        {
-            if (!_isDragging)
-            {
-                return;
-            }
-
-            Vector2 delta = evt.position - _clickPos;
-
-            _profilerWindow.style.translate = new Translate(delta.x, delta.y);
-        });
-
-        _profilerWindow.RegisterCallback<PointerUpEvent>(evt =>
-        {
-            if (_isDragging)
-            {
-                _isDragging = false;
-
-                _profilerWindow.ReleasePointer(evt.pointerId);
-
-                Translate translate = _profilerWindow.style.translate.value;
-                _profilerWindow.style.left = _oldPosX + translate.x.value;
-                _profilerWindow.style.top = _oldPosY + translate.y.value;
-                _profilerWindow.style.translate = new Translate(0, 0);
-            }
-        });
-
         StartCoroutine(UpdateDelayed(0.5f));
     }
 

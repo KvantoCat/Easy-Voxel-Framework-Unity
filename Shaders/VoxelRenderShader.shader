@@ -80,7 +80,8 @@ Shader "VLib/Render"
 
             int COUNT;
 
-            bool BoxN(float3 ro, float3 rd, float3 pos, float sizeF, out float dist, out float3 normal)
+            bool BoxN(float3 ro, float3 rd, float3 pos, float sizeF,
+                out float dist, out float3 normal)
             {
                 float3 invRd = rcp(rd);
                 float3 t0 = (pos - ro) * invRd;
@@ -99,13 +100,14 @@ Shader "VLib/Render"
                 float3 nearEq = step(tMin, tNear.xxx) * step(tNear.xxx, tMin);
                 normal = -sign(rd) * nearEq * hit;
 
-                return hit > 0.5;
+                return hit >= 0.5;
             }
 
-            float GetDistAndN(float3 po, float3 rd, float3 pos, float s, out float3 n)
+            float GetDistAndN(float3 po, float3 rd, float3 rdInv,
+                float3 pos, float s, out float3 n)
             {
                 float3 b = pos + step(0.0, rd) * s;
-                float3 t = (b - po) * rcp(rd);
+                float3 t = (b - po) * rdInv;
 
                 float dist = min(t.x, min(t.y, t.z));
 
@@ -116,133 +118,107 @@ Shader "VLib/Render"
 
             int GetICoord(float3 nodePo) 
             {
-                int3 res = (int3)(abs(floor(nodePo))) & 1; 
+                int3 res = (int3)(floor(nodePo)) & 1; 
                 return res.x | (res.y << 1) | (res.z << 2);
             }
 
-            bool VoxelTrace(float3 ro, inout float distance, float3 rd, TR tr,
-                 out float3 normal, out float3 color, out float bounds) 
+            bool VoxelTrace(float3 ro, float3 rd, TR tr, inout float distance,
+                 inout float3 normal, out float3 color, out float bounds) 
             {
-                float3 pos = tr.pos - tr.scale * 0.5;
+                const int ITERCOUNT = 500;
+                const float3 POS = tr.pos - tr.scale * 0.5;
+                const float3 RDINV = rcp(rd);
 
-                bool isHit = false; 
-
-                normal = 0.0;
-                color = 0.0;
+                bool hit = false; 
                 bounds = 0.025;
 
                 int depth = 0;
-                int stack1 = 0;
-                // int2 stack2 = 0;
-                float3 po = ro + rd * distance;
+                int stack = 0;
 
                 Node node = Nodes[tr.index];
 
+                float3 po = ro + rd * distance;
                 float nodeScale = tr.scale;
                 float nodeScaleRev = 1.0 / tr.scale;
 
                 [loop]
-                for (int i = 0; i <= 200; i++) 
+                for (int iter = 0; iter <= ITERCOUNT; iter++) 
                 {
-                    float3 nodePo = (po - pos) * nodeScaleRev;
+                    float3 nodePo = (po - POS) * nodeScaleRev;
                     int nodeICoord = GetICoord(nodePo);
 
-                    // bool a = depth < 10;
-                    // int currentStack = a ? stack2.x : stack2.y;
-                    // int currentDepth = a ? depth : depth - 10;
-                    // int nodeICoordFromStack = (currentStack >> (currentDepth * 3)) & 7;
-                    int nodeICoordFromStack = (stack1 >> (depth * 3)) & 7;
+                    int nodeICoordFromStack = (stack >> (depth * 3)) & 7;
 
                     if (nodeICoord == nodeICoordFromStack)
                     {
-                        float3 childPo = (po - pos) * nodeScaleRev * 2.0;
+                        float3 childPo = nodePo * 2.0;
                         int childICoord = GetICoord(childPo);
 
                         if ((node.mask & (1 << childICoord)) == 0)
                         {
                             float childScale = 0.5 * nodeScale;
-                            float3 childPos = floor(childPo) * childScale + pos; 
+                            float3 childPos = floor(childPo) * childScale + POS; 
 
-                            float dist = GetDistAndN(po, rd, childPos, childScale, normal);
+                            float dist = GetDistAndN(po, rd, RDINV, childPos, childScale, normal);
                             
-                            float epsilon = 1e-4 * nodeScale / log(1.0 - dot(rd, normal));
+                            float epsilon = 1e-4 * childScale / log(1.0 - dot(rd, normal));
                             float distE = dist + epsilon;
 
-                            if (distE <= 0.0) 
-                            { 
-                                break;
-                            }
+                            if (distE <= 0.0) break;
 
                             distance += distE;
                             po = ro + rd * distance;
                         }
                         else
                         {
-                            bounds += 0.025;
-
-                            int childDepth = depth + 1;
-
-                            if (distance >= LODDist && childDepth == tr.depth - 1 && LODUse) 
+                            if (node.child == -1) 
                             {
-                                isHit = true;
-
-                                Node node0 = Nodes[tr.index + node.child + firstbitlow(node.mask)];
-                                int i = firstbitlow(node0.mask);
-                                int j = i >> 1;
-                                int rgb = j == 0 ? node0.col0 : (j == 1 ? node0.col1 : (j == 2 ? node0.col2 : node0.col3));
-                                rgb = (rgb << (15 * (1 - (i & 1)) + 2)) >> 17;
-                                int r = (rgb & 0x7c00) >> 10;
-                                int g = (rgb & 0x3e0) >> 5;
-                                int b = rgb & 0x1f;
-                                color = float3(r, g, b) * 0.0322;
-
-                                break;
-                            }
-
-                            if (node.child == -1)
-                            {
-                                isHit = true;
-
                                 int j = childICoord >> 1;
-                                int rgb = j == 0 ? node.col0 : (j == 1 ? node.col1 : (j == 2 ? node.col2 : node.col3));
+                                int4 colors = int4(node.col0, node.col1, node.col2, node.col3);
+                                int rgb = colors[j];
                                 rgb = (rgb << (15 * (1 - (childICoord & 1)) + 2)) >> 17;
                                 int r = (rgb & 0x7c00) >> 10;
                                 int g = (rgb & 0x3e0) >> 5;
                                 int b = rgb & 0x1f;
                                 color = float3(r, g, b) * 0.0322;
 
+                                hit = true;
                                 break;
                             }
 
-                            // int dChildDepth = childDepth < 10 ? childDepth : childDepth - 10;
+                            depth += 1;
 
-                            // if (a) 
-                            // {
-                            //     stack2.x &= ~(7 << (dChildDepth * 3));
-                            //     stack2.x |= (childICoord << (dChildDepth * 3));
-                            // }
-                            // else 
-                            // {
-                            //     stack2.y &= ~(7 << (dChildDepth * 3));
-                            //     stack2.y |= (childICoord << (dChildDepth * 3));
-                            // }
+                            if (distance >= LODDist && depth == tr.depth - 1 && LODUse) 
+                            {
+                                Node node0 = Nodes[tr.index + node.child + firstbitlow(node.mask)];
+                                int i = firstbitlow(node0.mask);
+                                int j = i >> 1;
+                                int4 colors = int4(node0.col0, node0.col1, node0.col2, node0.col3);
+                                int rgb = colors[j];
+                                rgb = (rgb << (15 * (1 - (i & 1)) + 2)) >> 17;
+                                int r = (rgb & 0x7c00) >> 10;
+                                int g = (rgb & 0x3e0) >> 5;
+                                int b = rgb & 0x1f;
+                                color = float3(r, g, b) * 0.0322;
 
-                            stack1 &= ~(7 << (childDepth * 3));
-                            stack1 |= (childICoord << (childDepth * 3));
+                                hit = true;
+                                break;
+                            }
+
+                            nodeScaleRev *= 2.0;
+                            nodeScale *= 0.5;
+                            bounds += 0.025;
+
+                            stack &= ~(7 << (depth * 3));
+                            stack |= (childICoord << (depth * 3));
 
                             uint count = countbits(node.mask & ((1 << childICoord) - 1));
                             node = Nodes[tr.index + node.child + count];
-                            depth += 1;
-                            nodeScaleRev *= 2.0;
-                            nodeScale *= 0.5;
                         }
                     }
                     else 
                     {
-                        if (depth == 0) 
-                        {
-                            break;
-                        }
+                        if (depth == 0) break;
 
                         depth -= 1;
                         nodeScaleRev *= 0.5;
@@ -251,7 +227,7 @@ Shader "VLib/Render"
                     }
                 }
 
-                return isHit;
+                return hit;
             }
 
             float3 GetEnvironmentLight(float3 ro, float3 rd) 
@@ -271,85 +247,70 @@ Shader "VLib/Render"
 
             float3 SceneTraceTEST(float3 ro, float3 rd) 
             {
-                float distance = 0.0;
-                bool isHitB = false;
-                bool isHit = false;
+                const int ITERS = 5;
+                const float W = 1.5;
 
+                float distance = 0.0;
+                float3 normal = 0.0;
                 float3 color = 0.0;
+                bool isHit = false;
                 float3 po = ro;
 
-                TR trMin;
-
                 [loop]
-                for (int j = 0; j < COUNT; j++) 
+                for (int j = 0; j < ITERS; j++) 
                 {
-                    isHitB = false;
-                    float minDistB = MaxRenderDist;
+                    TR tr;
+                    float distBoxMin = MaxRenderDist;
+                    bool isHitBox = false;
 
                     [loop]
                     for (int i = 0; i < COUNT; i++) 
                     {
-                        TR tr = TRs[i];
+                        TR trI = TRs[i];
+                        float3 pos = trI.pos - trI.scale * 0.5;
 
-                        float3 pos = tr.pos - tr.scale * 0.5;
+                        float d; float3 n;
+                        bool h = BoxN(ro, rd, pos, trI.scale, d, n);
 
-                        if (all(po >= pos && po < pos + tr.scale)) 
-                        {
-                            minDistB = distance;
-                            isHitB = true;
-                            trMin = tr;
+                        if (!h) continue;
 
+                        if (all(po >= pos && po < pos + trI.scale)) 
+                        { 
+                            distBoxMin = distance;
+                            isHitBox = true;
+                            tr = trI;
+                            normal = n;
                             break;
                         }
 
-                        float d; float3 n;
-                        bool h = BoxN(ro, rd, pos, tr.scale, d, n);
-
-                        // if (h && distance == 0.0 && d == 0.0) 
-                        // {
-                        //     minDistB = d;
-                        //     isHitB = h;
-                        //     trMin = tr;
-                        //     break;
-                        // }
-
-                        if (h && d < minDistB && d > distance)
+                        if (d < distBoxMin && d > distance)
                         { 
-                            minDistB = d;
-                            isHitB = h;
-                            trMin = tr;
+                            distBoxMin = d;
+                            isHitBox = true;
+                            tr = trI;
+                            normal = n;
                         }           
                     }
 
-                    if (!isHitB) 
-                    {
-                        color = 0.0;
-                        break;
-                    }
+                    if (!isHitBox) break;
 
-                    distance = minDistB != 0.0 ? minDistB + 1e-4 * trMin.scale : 0.0;
+                    distance = distBoxMin != 0.0 ? distBoxMin + 1e-5 * tr.scale : 0.0;
 
-                    float3 n; float3 c; float b;
-                    bool h = VoxelTrace(ro, distance, rd, trMin, n, c, b);
+                    float bounds;
+                    isHit = VoxelTrace(ro, rd, tr, distance, normal, color, bounds);
 
                     po = ro + rd * distance;
 
-                    if (h) 
-                    {
-                        color = c;
-                        isHit = true;
-                        break;
-                    }
+                    if (isHit) break;
                 }
 
-                if (!isHit) 
-                {
-                    color = GetEnvironmentLight(ro, rd);
-                }
+                float diff = dot(normal, -SunLightDir);
+                diff = (diff + W) / (1.0 + W);
+                color *= diff;
 
-                float3 result = color;
+                if (!isHit) color = GetEnvironmentLight(ro, rd);
 
-                return result;
+                return color;
             }
 
             float4 frag (v2f i) : SV_Target
